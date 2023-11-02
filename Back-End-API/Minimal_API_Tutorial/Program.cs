@@ -1,5 +1,7 @@
 using Business_And_Data_Layers.Data;
 using Business_And_Data_Layers.Models;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
 
@@ -16,11 +18,11 @@ app.UseSwaggerUI();
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapGet("/", () => { return "Is Development"; });
+    app.MapGet("/", () => { return "Is Development"; }).ExcludeFromDescription();
 }
 else
 {
-    app.MapGet("/", () => { return "Docuemtation : houdaifabouamine-001-site1.gtempurl.com/swagger"; });
+    app.MapGet("/", () => { return "Docuemtation : houdaifabouamine-001-site1.gtempurl.com/swagger"; }).ExcludeFromDescription();
 }
 
 app.MapGet("/Games/Join", () =>
@@ -56,8 +58,8 @@ app.MapGet("/Games/Join", () =>
 
         return new { game, player = player1 };
     }
-}
-);
+
+});
 
 app.MapPut("/Games/{Game_Id}/{Player_Id}", (Guid Game_Id,Guid Player_Id, [FromBody] Game game) =>
 {
@@ -75,9 +77,36 @@ app.MapPut("/Games/{Game_Id}/{Player_Id}", (Guid Game_Id,Guid Player_Id, [FromBo
         game.PlayerTurn_Id = game.Player1_Id;
     }
 
+    DataLayer database = new DataLayer();
+    database.Games.Update(game);
+    database.SaveChanges();
+
     return game;
-}
-);
+
+});
+
+app.MapGet("/Games/{Game_Id}/",(Guid Game_Id) => 
+{
+    DataLayer database = new DataLayer();
+
+    var list = database.Games.Where(g => g.Id == Game_Id).ToList();
+
+    if (list.Count <= 0)
+    {
+        return Results.NotFound();
+    }
+
+    return Results.Ok(list[0]);
+
+});
+
+app.MapGet("/Games", () => 
+{
+
+    DataLayer database = new DataLayer();
+    return database.Games.ToList();
+
+});
 
 if (app.Environment.IsDevelopment())
 {
